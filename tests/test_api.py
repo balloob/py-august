@@ -1,11 +1,13 @@
 import os
 import unittest
+from unittest.mock import patch, Mock
 
 import requests_mock
 
 from august.api import API_GET_DOORBELLS_URL, Api, API_GET_LOCKS_URL, \
     API_GET_LOCK_STATUS_URL, API_LOCK_URL, API_UNLOCK_URL, API_GET_LOCK_URL, \
-    API_GET_DOORBELL_URL
+    API_GET_DOORBELL_URL, HEADER_AUGUST_API_KEY, HEADER_VALUE_API_KEY, \
+    HEADER_USER_AGENT, HEADER_VALUE_USER_AGENT
 from august.lock import LockStatus, LockDoorStatus
 
 ACCESS_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"
@@ -238,3 +240,53 @@ class TestApi(unittest.TestCase):
         status = api.unlock(ACCESS_TOKEN, lock_id)
 
         self.assertEqual(LockStatus.UNLOCKED, status)
+
+
+def test_passing_api_key():
+    """Test passing an api key to API object."""
+    api = Api()
+
+    with patch('requests.request', return_value=Mock(json=Mock(return_value={
+        'status': ''
+    }))) as mock_request:
+        api.lock('fake-access-token', 'fake-lock-id')
+
+    assert len(mock_request.mock_calls) == 1
+    headers = mock_request.mock_calls[0][2]['headers']
+    assert headers[HEADER_AUGUST_API_KEY] == HEADER_VALUE_API_KEY
+
+    api = Api(api_key='mock-api-key')
+
+    with patch('requests.request', return_value=Mock(json=Mock(return_value={
+        'status': ''
+    }))) as mock_request:
+        api.lock('fake-access-token', 'fake-lock-id')
+
+    assert len(mock_request.mock_calls) == 1
+    headers = mock_request.mock_calls[0][2]['headers']
+    assert headers[HEADER_AUGUST_API_KEY] == 'mock-api-key'
+
+
+def test_passing_user_agent():
+    """Test passing a user agent to API object."""
+    api = Api()
+
+    with patch('requests.request', return_value=Mock(json=Mock(return_value={
+        'status': ''
+    }))) as mock_request:
+        api.lock('fake-access-token', 'fake-lock-id')
+
+    assert len(mock_request.mock_calls) == 1
+    headers = mock_request.mock_calls[0][2]['headers']
+    assert headers[HEADER_USER_AGENT] == HEADER_VALUE_USER_AGENT
+
+    api = Api(user_agent='mock-user-agent')
+
+    with patch('requests.request', return_value=Mock(json=Mock(return_value={
+        'status': ''
+    }))) as mock_request:
+        api.lock('fake-access-token', 'fake-lock-id')
+
+    assert len(mock_request.mock_calls) == 1
+    headers = mock_request.mock_calls[0][2]['headers']
+    assert headers[HEADER_USER_AGENT] == 'mock-user-agent'

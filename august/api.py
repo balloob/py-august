@@ -44,13 +44,13 @@ API_UNLOCK_URL = API_BASE_URL + "/remoteoperate/{lock_id}/unlock"
 _LOGGER = logging.getLogger(__name__)
 
 
-def _api_headers(access_token=None):
+def _api_headers(api_key, user_agent, access_token=None):
     headers = {
         HEADER_ACCEPT_VERSION: HEADER_VALUE_ACCEPT_VERSION,
-        HEADER_AUGUST_API_KEY: HEADER_VALUE_API_KEY,
-        HEADER_KEASE_API_KEY: HEADER_VALUE_API_KEY,
+        HEADER_AUGUST_API_KEY: api_key,
+        HEADER_KEASE_API_KEY: api_key,
         HEADER_CONTENT_TYPE: HEADER_VALUE_CONTENT_TYPE,
-        HEADER_USER_AGENT: HEADER_VALUE_USER_AGENT,
+        HEADER_USER_AGENT: user_agent,
     }
 
     if access_token:
@@ -82,9 +82,13 @@ def _determine_lock_door_status(status):
 
 
 class Api:
-    def __init__(self, timeout=10, command_timeout=60):
+    def __init__(self, timeout=10, command_timeout=60,
+                 api_key=HEADER_VALUE_API_KEY,
+                 user_agent=HEADER_VALUE_USER_AGENT):
         self._timeout = timeout
         self._command_timeout = command_timeout
+        self._api_key = api_key
+        self._user_agent = user_agent
 
     def get_session(self, install_id, identifier, password):
         response = self._call_api(
@@ -245,7 +249,9 @@ class Api:
         payload = kwargs.get("params") or kwargs.get("json")
 
         if "headers" not in kwargs:
-            kwargs["headers"] = _api_headers(access_token=access_token)
+            kwargs["headers"] = _api_headers(api_key=self._api_key,
+                                             user_agent=self._user_agent,
+                                             access_token=access_token)
 
         if "timeout" not in kwargs:
             kwargs["timeout"] = self._timeout
